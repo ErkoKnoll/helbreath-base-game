@@ -1,0 +1,11 @@
+{
+  "name": "mmorpg-tools",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@jsquash/oxipng": "^2.3.0",
+    "fflate": "^0.8.2",
+    "fluent-ffmpeg": "^2.1.3",
+    "sharp": "^0.33.0"
+  }
+}

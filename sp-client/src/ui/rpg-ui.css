@@ -1,0 +1,547 @@
+/* RPG Styled Radix UI Components */
+
+/* Checkbox Styles */
+.rpg-checkbox-root {
+    all: unset;
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(180deg, var(--rpg-brown-medium) 0%, var(--rpg-brown-dark) 100%);
+    border: 2px solid var(--rpg-leather);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 1px 2px var(--rpg-shadow);
+    transition: all 0.2s;
+}
+
+.rpg-checkbox-root:hover {
+    background: linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-medium) 100%);
+    border-color: var(--rpg-gold);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.rpg-checkbox-root[data-state="checked"] {
+    background: linear-gradient(180deg, var(--rpg-gold-dark) 0%, var(--rpg-brown-base) 100%);
+    border-color: var(--rpg-gold);
+    box-shadow: 
+        inset 0 1px 2px rgba(0, 0, 0, 0.3),
+        0 0 12px rgba(212, 175, 55, 0.5);
+}
+
+.rpg-checkbox-indicator {
+    color: var(--rpg-parchment);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 1px 1px 2px var(--rpg-shadow);
+}
+
+/* Switch Styles */
+.rpg-switch-root {
+    all: unset;
+    width: 44px;
+    height: 24px;
+    background: linear-gradient(180deg, var(--rpg-brown-medium) 0%, var(--rpg-brown-dark) 100%);
+    border-radius: 12px;
+    position: relative;
+    border: 2px solid var(--rpg-leather);
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.4),
+        0 1px 2px var(--rpg-shadow);
+    transition: all 0.2s;
+}
+
+.rpg-switch-root:hover {
+    border-color: var(--rpg-gold);
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(212, 175, 55, 0.3);
+}
+
+.rpg-switch-root[data-state="checked"] {
+    background: linear-gradient(180deg, var(--rpg-gold-dark) 0%, var(--rpg-brown-base) 100%);
+    box-shadow: 
+        inset 0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 12px rgba(212, 175, 55, 0.4);
+}
+
+.rpg-switch-thumb {
+    display: block;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(180deg, var(--rpg-parchment) 0%, var(--rpg-brown-lighter) 100%);
+    border-radius: 50%;
+    border: 1px solid var(--rpg-leather);
+    box-shadow: 
+        0 2px 4px var(--rpg-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    transition: transform 0.2s;
+    transform: translateX(2px);
+    will-change: transform;
+}
+
+.rpg-switch-thumb[data-state="checked"] {
+    transform: translateX(20px);
+    background: linear-gradient(180deg, var(--rpg-gold-light) 0%, var(--rpg-gold) 100%);
+    box-shadow: 
+        0 2px 4px var(--rpg-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 0 8px rgba(212, 175, 55, 0.5);
+}
+
+/* Label Styles */
+.rpg-label {
+    color: var(--rpg-parchment);
+    font-size: 14px;
+    font-family: 'Georgia', serif;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: color 0.2s;
+}
+
+.rpg-label:hover {
+    color: var(--rpg-gold-light);
+}
+
+/* Horizontal Separator */
+.rpg-horizontal-separator {
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--rpg-leather) 20%, 
+        var(--rpg-leather) 80%, 
+        transparent 100%);
+    margin: 8px 0;
+    position: relative;
+}
+
+.rpg-horizontal-separator::after {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--rpg-gold) 50%, 
+        transparent 100%);
+    opacity: 0.3;
+}
+
+/* Vertical Separator */
+.rpg-vertical-separator {
+    width: 2px;
+    flex-shrink: 0;
+    align-self: stretch;
+    background: linear-gradient(180deg, 
+        transparent 0%, 
+        var(--rpg-leather) 20%, 
+        var(--rpg-leather) 80%, 
+        transparent 100%);
+    margin: 0 8px;
+    position: relative;
+}
+
+.rpg-vertical-separator::after {
+    content: '';
+    position: absolute;
+    left: 1px;
+    top: 20%;
+    bottom: 20%;
+    width: 1px;
+    background: linear-gradient(180deg, 
+        transparent 0%, 
+        var(--rpg-gold) 50%, 
+        transparent 100%);
+    opacity: 0.3;
+}
+
+/* Stats Display */
+.rpg-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    background: linear-gradient(135deg, 
+        rgba(74, 44, 26, 0.5) 0%, 
+        rgba(45, 24, 16, 0.5) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 6px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.rpg-stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+}
+
+.rpg-stat-label {
+    color: var(--rpg-gold);
+    font-weight: normal;
+}
+
+.rpg-stat-value {
+    color: var(--rpg-parchment);
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    text-align: right;
+}
+
+/* Section Title */
+.rpg-section-title {
+    text-align: center;
+    color: var(--rpg-gold);
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 2px var(--rpg-shadow);
+    margin: 8px 0 4px;
+}
+
+/* Control Grid */
+.rpg-control-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 40px);
+    gap: 4px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+/* Zoom Controls */
+.rpg-zoom-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+/* Slider Styles */
+.rpg-slider-root {
+    position: relative;
+    display: flex;
+    align-items: center;
+    user-select: none;
+    touch-action: none;
+    width: 100%;
+    height: 20px;
+    margin: 12px 0;
+}
+
+.rpg-slider-track {
+    background: linear-gradient(180deg, var(--rpg-brown-medium) 0%, var(--rpg-brown-dark) 100%);
+    position: relative;
+    flex-grow: 1;
+    height: 8px;
+    border-radius: 4px;
+    border: 2px solid var(--rpg-leather);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.rpg-slider-range {
+    position: absolute;
+    background: linear-gradient(90deg, var(--rpg-gold-dark) 0%, var(--rpg-gold) 100%);
+    height: 100%;
+    border-radius: 2px;
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.rpg-slider-thumb {
+    display: block;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(180deg, var(--rpg-gold-light) 0%, var(--rpg-gold) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 50%;
+    box-shadow: 
+        0 2px 6px var(--rpg-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+    transition: all 0.2s;
+}
+
+.rpg-slider-thumb:hover {
+    background: linear-gradient(180deg, var(--rpg-gold-light) 0%, var(--rpg-gold-dark) 100%);
+    box-shadow: 
+        0 3px 8px var(--rpg-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 0 12px rgba(212, 175, 55, 0.6);
+    transform: scale(1.1);
+}
+
+.rpg-slider-thumb:focus {
+    outline: none;
+    box-shadow: 
+        0 3px 8px var(--rpg-shadow),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6),
+        0 0 16px rgba(212, 175, 55, 0.8);
+}
+
+.rpg-zoom-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+/* Select/Dropdown Styles */
+.rpg-select {
+    width: 100%;
+    padding: 8px 12px;
+    background-image: 
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, var(--rpg-brown-medium) 0%, var(--rpg-brown-dark) 100%);
+    background-repeat: no-repeat;
+    background-position: right 8px center, 0 0;
+    color: var(--rpg-parchment);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 4px;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-image 0.2s, border-color 0.2s, box-shadow 0.2s;
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 1px 2px var(--rpg-shadow);
+    appearance: none;
+    padding-right: 32px;
+}
+
+.rpg-select:hover {
+    background-image: 
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-medium) 100%);
+    border-color: var(--rpg-gold);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.rpg-select:focus {
+    outline: none;
+    background-image: 
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 9L1 4h10z'/%3E%3C/svg%3E"),
+        linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-medium) 100%);
+    border-color: var(--rpg-gold);
+    box-shadow: 
+        inset 0 2px 4px rgba(0, 0, 0, 0.2),
+        0 0 12px rgba(212, 175, 55, 0.6);
+}
+
+.rpg-select option {
+    background: var(--rpg-brown-dark);
+    color: var(--rpg-parchment);
+    padding: 8px;
+}
+
+/* Inventory Dialog */
+.draggable-dialog[data-dialog-id="inventory-dialog"] {
+    min-width: 360px;
+}
+
+/* Dark red background when hovering outside dialog (drop-to-ground intent) */
+.draggable-dialog[data-dialog-id="inventory-dialog"]:has([data-drop-to-ground="true"]) {
+    background: linear-gradient(135deg, rgba(80, 20, 20, 0.98) 0%, rgba(50, 10, 10, 1) 100%);
+    border-color: rgba(139, 0, 0, 0.8);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(139, 0, 0, 0.2),
+        0 0 0 1px rgba(80, 20, 20, 0.9);
+}
+
+.inventory-dialog-content {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    padding: 5px;
+}
+
+.inventory-equipped-area {
+    display: grid;
+    grid-template-columns: 76px 66px 66px 76px;
+    grid-template-rows: 70px 53px 100px 90px 70px;
+    grid-template-areas:
+        ". hlt hlt ut"
+        ". nck nck ."
+        "wpn arm hbk shld"
+        "lrg leg cpe rrg"
+        ". bts bts .";
+    gap: 6px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg,
+        rgba(74, 44, 26, 0.5) 0%,
+        rgba(45, 24, 16, 0.5) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 6px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.inventory-slot {
+    background: linear-gradient(160deg,
+        rgba(74, 44, 26, 0.7) 0%,
+        rgba(26, 15, 10, 0.9) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 4px;
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.5),
+        0 1px 2px var(--rpg-shadow);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    padding-bottom: 3px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    cursor: default;
+    position: relative;
+}
+
+.inventory-slot:hover,
+.inventory-slot-drop-target {
+    border-color: var(--rpg-gold);
+    box-shadow:
+        inset 0 2px 6px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+.inventory-slot-label {
+    font-family: 'Georgia', serif;
+    font-size: 9px;
+    color: rgba(212, 175, 55, 0.55);
+    letter-spacing: 0.3px;
+    text-align: center;
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+    text-transform: uppercase;
+}
+
+.inventory-slot:hover .inventory-slot-label {
+    color: rgba(212, 175, 55, 0.85);
+}
+
+.inventory-slot-item-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* Center item images vertically; empty slots keep label at bottom */
+.inventory-slot-has-item {
+    justify-content: center;
+    padding-bottom: 0; /* Remove asymmetric padding for true vertical centering */
+}
+
+/* Grid area assignments */
+.inventory-slot-helmet   { grid-area: hlt; width: 68px; height: 68px; justify-self: center; align-self: center; }
+.inventory-slot-necklace { grid-area: nck; width: 43px; height: 41px; min-height: 41px; justify-self: center; align-self: center; contain: size; overflow: hidden; }
+.inventory-slot-accessory { grid-area: ut;  width: 43px; height: 41px; min-height: 41px; justify-self: center; align-self: center; contain: size; overflow: hidden; }
+.inventory-slot-weapon   { grid-area: wpn; }
+.inventory-slot-shield   { grid-area: shld; }
+.inventory-slot-armor    { grid-area: arm; }
+.inventory-slot-hauberk  { grid-area: hbk; }
+.inventory-slot-leggings { grid-area: leg; }
+.inventory-slot-cape     { grid-area: cpe; }
+.inventory-slot-boots    { grid-area: bts; width: 68px; height: 68px; justify-self: center; align-self: center; }
+.inventory-slot-ring-left  { grid-area: lrg; width: 34px; height: 34px; justify-self: center; align-self: center; }
+.inventory-slot-ring-right { grid-area: rrg; width: 34px; height: 34px; justify-self: center; align-self: center; }
+
+/* Smaller label text for tiny slots */
+.inventory-slot-necklace .inventory-slot-label,
+.inventory-slot-accessory .inventory-slot-label,
+.inventory-slot-ring-left .inventory-slot-label,
+.inventory-slot-ring-right .inventory-slot-label {
+    font-size: 8px;
+}
+
+/* Drag ghost - follows cursor during weapon slot drag */
+.inventory-drag-ghost {
+    position: fixed;
+    pointer-events: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-bag-area {
+    min-height: 120px;
+    background: linear-gradient(135deg,
+        rgba(74, 44, 26, 0.5) 0%,
+        rgba(45, 24, 16, 0.5) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 6px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    padding: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.inventory-bag-item {
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.inventory-bag-item.inventory-bag-item-debug {
+    border: 1px solid red;
+}
+
+.inventory-bag-item img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.inventory-bag-area-drop-target {
+    border-color: var(--rpg-gold);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 0 8px rgba(212, 175, 55, 0.4);
+}
+
+/* Inventory bag item context menu */
+.rpg-context-menu {
+    position: fixed;
+    min-width: 140px;
+    padding: 4px 0;
+    background: linear-gradient(135deg,
+        rgba(74, 44, 26, 0.98) 0%,
+        rgba(45, 24, 16, 0.98) 100%);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 6px;
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.3),
+        0 4px 12px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(112, 66, 20, 0.5);
+    z-index: 100000;
+    font-family: 'Georgia', serif;
+    font-size: 14px;
+}
+
+.rpg-context-menu-item {
+    padding: 8px 14px;
+    color: var(--rpg-parchment);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    user-select: none;
+}
+
+.rpg-context-menu-item:hover {
+    background: linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-medium) 100%);
+    color: var(--rpg-gold-light);
+}

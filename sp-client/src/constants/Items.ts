@@ -1,0 +1,1867 @@
+/**
+ * Identifies an equipped item by its item ID and a unique equipped instance ID.
+ */
+export interface InventoryItem {
+    itemId: number;
+    itemUid: number;
+    /** Relative X coordinate within bag container (pixels from left). Undefined = center. */
+    bagX?: number;
+    /** Relative Y coordinate within bag container (pixels from top). Undefined = center. */
+    bagY?: number;
+    /** Number of stacked items. Defaults to 1. Used for stackable items. */
+    quantity?: number;
+    /** Per-instance effect overrides (e.g. Appearance Glow from ItemDialog). Merged with item effects, overrides take precedence. */
+    effectOverrides?: Effect[];
+}
+
+/**
+ * Item type enumeration for categorizing game items.
+ */
+export enum ItemTypes {
+    WEAPON = 'weapon',
+    SHIELD = 'shield',
+    ARMOR = 'armor',
+    HAUBERK = 'hauberk',
+    LEGGINGS = 'leggings',
+    HELMET = 'helmet',
+    CAPE = 'cape',
+    BOOTS = 'boots',
+    ACCESSORY = 'accessory',
+    NECKLACE = 'necklace',
+    RING = 'ring',
+    MISC = 'misc',
+}
+
+/** Weapon type for attack behavior (e.g. BOW spawns arrow projectile). */
+export enum WeaponType {
+    BOW = 'BOW',
+}
+
+/** Ring equipment slot type (left vs right). */
+export type RingSlot = 'ring-left' | 'ring-right';
+
+export const RING_SLOT_LEFT: RingSlot = 'ring-left';
+export const RING_SLOT_RIGHT: RingSlot = 'ring-right';
+
+/** Equipment slot types. Single-slot items use their ItemTypes; rings use RingSlot. MISC is excluded (not equippable). */
+export type EquipmentSlot = Exclude<ItemTypes, ItemTypes.RING | ItemTypes.MISC> | RingSlot;
+
+/** Slots that accept ring items. */
+export const RING_SLOTS: [RingSlot, RingSlot] = [RING_SLOT_LEFT, RING_SLOT_RIGHT];
+
+/** Weapon/item effect types. When equipped, triggers special visual/behavior on attack. */
+export enum ItemEffect {
+    STORM_BRINGER = 'STORM_BRINGER',
+    /** Star twinkle: random sparkles pop up over the player constantly (effect5 sheet 5). */
+    STAR_TWINKLE = 'STAR_TWINKLE',
+    /** Glare effect on equipped weapon (e.g. Dark Knight Templar Sword). Color via effectColor. */
+    GLARE = 'GLARE',
+    /** Glow effect on equipped sprite (Phaser FX). Oscillating outer strength. Color via effectColor. */
+    GLOW = 'GLOW',
+    /** Tint item sprite in inventory UI. Color via effectColor (default black). */
+    TINT_INVENTORY = 'TINT_INVENTORY',
+    /** Tint equipped sprite appearance in-world (multiply). Color via effectColor. */
+    TINT_APPEARANCE = 'TINT_APPEARANCE',
+}
+
+/** Single item effect with optional color (e.g. hex for GLARE, GLOW, TINT_APPEARANCE). */
+export interface Effect {
+    effect: ItemEffect;
+    /** Hex colour for GLARE, GLOW (e.g. 0x0000ff) or TINT_APPEARANCE (multiply tint). */
+    effectColor?: number;
+}
+
+/** Default effectColor for TINT_INVENTORY when not specified (black). */
+export const TINT_INVENTORY_DEFAULT_COLOR = 0x000000;
+
+/**
+ * Merges item effects with per-instance effect overrides. Overrides replace existing effects of the same type.
+ */
+export function mergeItemEffects(itemEffects?: Effect[], overrides?: Effect[]): Effect[] | undefined {
+    const base = itemEffects ?? [];
+    if (!overrides?.length) return base.length ? base : undefined;
+    const result = [...base];
+    for (const ov of overrides) {
+        const idx = result.findIndex((e) => e.effect === ov.effect);
+        if (idx >= 0) result[idx] = ov;
+        else result.push(ov);
+    }
+    return result.length ? result : undefined;
+}
+
+/**
+ * Gets GLOW effect color from item definition and optional effect overrides.
+ * Used for hover overlay display. Matches GameAsset default (0xffffff) when effect has no color.
+ * @returns Hex color or undefined if item has no GLOW effect.
+ */
+export function getGlowEffectColor(itemDef: Item, effectOverrides?: Effect[]): number | undefined {
+    const merged = mergeItemEffects(itemDef.effects, effectOverrides);
+    const eff = merged?.find((e) => e.effect === ItemEffect.GLOW);
+    if (!eff) return undefined;
+    return eff.effectColor ?? 0xffffff;
+}
+
+/**
+ * Gets GLARE effect color from item definition and optional effect overrides.
+ * Used for hover overlay display. Matches GameAsset default (0x0000ff) when effect has no color.
+ * @returns Hex color or undefined if item has no GLARE effect.
+ */
+export function getGlareEffectColor(itemDef: Item, effectOverrides?: Effect[]): number | undefined {
+    const merged = mergeItemEffects(itemDef.effects, effectOverrides);
+    const eff = merged?.find((e) => e.effect === ItemEffect.GLARE);
+    if (!eff) return undefined;
+    return eff.effectColor ?? 0x0000ff;
+}
+
+/**
+ * Gets TINT_APPEARANCE effect color from item definition and optional effect overrides.
+ * Used for hover overlay display. Matches GameAsset default (0xffffff) when effect has no color.
+ * @returns Hex color or undefined if item has no TINT_APPEARANCE effect.
+ */
+export function getTintAppearanceEffectColor(itemDef: Item, effectOverrides?: Effect[]): number | undefined {
+    const merged = mergeItemEffects(itemDef.effects, effectOverrides);
+    const eff = merged?.find((e) => e.effect === ItemEffect.TINT_APPEARANCE);
+    if (!eff) return undefined;
+    return eff.effectColor ?? 0xffffff;
+}
+
+/**
+ * Gets TINT_INVENTORY effect color from item definition and optional effect overrides.
+ * Used for hover overlay display.
+ * @returns effectColor (defaults to black) or undefined if item has no TINT_INVENTORY effect.
+ */
+export function getTintInventoryEffectColorWithOverrides(itemDef: Item, effectOverrides?: Effect[]): number | undefined {
+    const merged = mergeItemEffects(itemDef.effects, effectOverrides);
+    const eff = merged?.find((e) => e.effect === ItemEffect.TINT_INVENTORY);
+    if (!eff) return undefined;
+    return eff.effectColor ?? TINT_INVENTORY_DEFAULT_COLOR;
+}
+
+/**
+ * Gets TINT_INVENTORY effect color from an item, if present.
+ * @returns effectColor (defaults to black) or undefined if item has no TINT_INVENTORY effect.
+ */
+export function getTintInventoryEffectColor(item: Item): number | undefined {
+    const eff = item.effects?.find((e) => e.effect === ItemEffect.TINT_INVENTORY);
+    if (!eff) return undefined;
+    return eff.effectColor ?? TINT_INVENTORY_DEFAULT_COLOR;
+}
+
+/**
+ * Returns true if any equipped item has the given effect (item def + effectOverrides).
+ * Used for passive effects like STAR_TWINKLE that trigger while equipped.
+ */
+export function hasEquippedItemEffect(
+    equippedItems: Partial<Record<EquipmentSlot, InventoryItem>>,
+    effect: ItemEffect
+): boolean {
+    for (const inv of Object.values(equippedItems)) {
+        if (!inv) continue;
+        const itemDef = getItemById(inv.itemId);
+        const merged = mergeItemEffects(itemDef?.effects, inv.effectOverrides);
+        if (merged?.some((e) => e.effect === effect)) return true;
+    }
+    return false;
+}
+
+/**
+ * Gets TINT_INVENTORY effect color from an inventory item (item def + effectOverrides).
+ * Used when dropping items to ground so the ground sprite matches the inventory tint.
+ * @returns effectColor (defaults to black) or undefined if item has no TINT_INVENTORY effect.
+ */
+export function getTintInventoryEffectColorFromInventoryItem(inventoryItem: InventoryItem): number | undefined {
+    const itemDef = getItemById(inventoryItem.itemId);
+    if (!itemDef) return undefined;
+    const merged = mergeItemEffects(itemDef.effects, inventoryItem.effectOverrides);
+    const eff = merged?.find((e) => e.effect === ItemEffect.TINT_INVENTORY);
+    if (!eff) return undefined;
+    return eff.effectColor ?? TINT_INVENTORY_DEFAULT_COLOR;
+}
+
+/**
+ * Gets the sprite key for displaying an item in the inventory UI.
+ * When item has TINT_INVENTORY effect, returns key with -{effectColorHex} suffix.
+ */
+export function getItemInventorySpriteKey(item: Item, gender: Gender): string | undefined {
+    return getItemInventorySpriteKeyWithOverrides(item, gender);
+}
+
+/**
+ * Gets the sprite key for displaying an inventory item (with optional effect overrides).
+ * Use when the item may have TINT_INVENTORY in effectOverrides (e.g. items created via ItemDialog).
+ */
+export function getItemInventorySpriteKeyWithOverrides(itemDef: Item, gender: Gender, effectOverrides?: Effect[]): string | undefined {
+    const sheetIndex = getItemSheetIndex(itemDef, gender);
+    const spriteIndex = getItemSpriteIndex(itemDef, gender);
+    if (sheetIndex === undefined || spriteIndex === undefined) return undefined;
+    const baseKey = `sprite-item-pack-${sheetIndex}-${spriteIndex}`;
+    const merged = effectOverrides?.length ? mergeItemEffects(itemDef.effects, effectOverrides) : itemDef.effects;
+    const eff = merged?.find((e) => e.effect === ItemEffect.TINT_INVENTORY);
+    if (!eff) return baseKey;
+    const effectColor = eff.effectColor ?? TINT_INVENTORY_DEFAULT_COLOR;
+    const effectColorHex = effectColor.toString(16).padStart(6, '0');
+    return `${baseKey}-${effectColorHex}`;
+}
+
+/** Maps equippable ItemTypes to equipment slot IDs. MISC is excluded (not equippable). */
+export const ITEM_TYPE_TO_SLOT_ID: Record<Exclude<ItemTypes, ItemTypes.MISC>, string> = {
+    [ItemTypes.WEAPON]: 'weapon',
+    [ItemTypes.SHIELD]: 'shield',
+    [ItemTypes.ARMOR]: 'armor',
+    [ItemTypes.HAUBERK]: 'hauberk',
+    [ItemTypes.LEGGINGS]: 'leggings',
+    [ItemTypes.HELMET]: 'helmet',
+    [ItemTypes.CAPE]: 'cape',
+    [ItemTypes.BOOTS]: 'boots',
+    [ItemTypes.ACCESSORY]: 'accessory',
+    [ItemTypes.NECKLACE]: 'necklace',
+    [ItemTypes.RING]: 'ring',
+};
+
+/** Maps EquipmentSlot to slot IDs for the inventory UI. */
+export const EQUIPMENT_SLOT_TO_SLOT_ID: Record<EquipmentSlot, string> = {
+    ...Object.fromEntries(
+        (Object.keys(ITEM_TYPE_TO_SLOT_ID) as (keyof typeof ITEM_TYPE_TO_SLOT_ID)[]).filter((t) => t !== ItemTypes.RING).map((t) => [t, ITEM_TYPE_TO_SLOT_ID[t]]),
+    ),
+    [RING_SLOT_LEFT]: 'ring-left',
+    [RING_SLOT_RIGHT]: 'ring-right',
+} as Record<EquipmentSlot, string>;
+
+/** Equipment slots that can display equipped items. */
+export const EQUIPPABLE_SLOTS: EquipmentSlot[] = [
+    ItemTypes.WEAPON, ItemTypes.SHIELD, ItemTypes.ARMOR, ItemTypes.HAUBERK, ItemTypes.LEGGINGS,
+    ItemTypes.HELMET, ItemTypes.CAPE, ItemTypes.BOOTS, ItemTypes.ACCESSORY, ItemTypes.NECKLACE,
+    RING_SLOT_LEFT, RING_SLOT_RIGHT,
+];
+
+import { Gender } from '../Types';
+
+/**
+ * Item data structure with sprite references for pack, ground, and equipped states.
+ */
+export interface Item {
+    id: number;
+    name: string;
+    itemType: ItemTypes;
+    itemSheetIndexMale?: number;
+    itemSheetIndexFemale?: number;
+    itemSpriteIndexMale?: number;
+    itemSpriteIndexFemale?: number;
+    /** Sprite index when dropped on ground. Falls back to itemSpriteIndex* when not set. */
+    droppedItemSpriteIndexMale?: number;
+    /** Sprite index when dropped on ground. Falls back to itemSpriteIndex* when not set. */
+    droppedItemSpriteIndexFemale?: number;
+    gender?: Gender;
+    equippedSpriteMale?: string;
+    equippedSpriteFemale?: string;
+    /** When set, weapon animation uses 56 consecutive sprites starting from this index (for shared sprites). */
+    startSpriteSheetIndex?: number;
+    /** Slots this item blocks when equipped (e.g. two-handed weapons block shield). */
+    blockedItemSlots?: ItemTypes[];
+    /** Sprite offset X for appearance rendering (e.g. angelic pendant). Applied when equipped. */
+    offsetX?: number;
+    /** Sprite offset Y for appearance rendering (e.g. angelic pendant). Applied when equipped. */
+    offsetY?: number;
+    /** Sprite scale for inventory display. 1 = 100%, 0.5 = 50% smaller, 1.5 = 50% larger, 2 = 2x size. */
+    scale?: number;
+    /** When true, multiple instances of this item stack in a single bag slot. */
+    stackable?: boolean;
+    /** When true, item can be consumed (double-click in bag). Must be MISC type. */
+    consumable?: true;
+    /** Sound name to play when item is consumed (e.g. 'E28'). */
+    consumptionSound?: string;
+    /** Item effects (e.g. Storm Bringer projectile, glare on equipped visuals). */
+    effects?: Effect[];
+    /** Weapon type for attack behavior (e.g. BOW spawns arrow projectile). */
+    weaponType?: WeaponType;
+}
+
+/**
+ * Gets the pack sprite sheet index for an item based on player gender.
+ * Uses itemSheetIndexMale or itemSheetIndexFemale; falls back to the other if one is missing.
+ */
+export function getItemSheetIndex(item: Item, gender: Gender): number | undefined {
+    const male = item.itemSheetIndexMale;
+    const female = item.itemSheetIndexFemale;
+    if (gender === Gender.MALE) return male ?? female;
+    return female ?? male;
+}
+
+/**
+ * Gets the pack sprite index for an item based on player gender.
+ * Uses itemSpriteIndexMale or itemSpriteIndexFemale; falls back to the other if one is missing.
+ */
+export function getItemSpriteIndex(item: Item, gender: Gender): number | undefined {
+    const male = item.itemSpriteIndexMale;
+    const female = item.itemSpriteIndexFemale;
+    if (gender === Gender.MALE) return male ?? female;
+    return female ?? male;
+}
+
+/**
+ * Gets the sprite index for an item when dropped on the ground.
+ * Uses droppedItemSpriteIndexMale/Female when specified, otherwise falls back to itemSpriteIndexMale/Female.
+ */
+export function getDroppedItemSpriteIndex(item: Item, gender: Gender): number | undefined {
+    const male = item.droppedItemSpriteIndexMale ?? item.itemSpriteIndexMale;
+    const female = item.droppedItemSpriteIndexFemale ?? item.itemSpriteIndexFemale;
+    if (gender === Gender.MALE) return male ?? female;
+    return female ?? male;
+}
+
+/**
+ * Gets an item definition by ID.
+ */
+export function getItemById(id: number): Item | undefined {
+    return ITEMS.find((i) => i.id === id);
+}
+
+/**
+ * Gets an item definition by equipped sprite name (equippedSpriteMale or equippedSpriteFemale).
+ */
+export function getItemByEquippedSprite(spriteName: string): Item | undefined {
+    return ITEMS.find((i) => i.equippedSpriteMale === spriteName || i.equippedSpriteFemale === spriteName);
+}
+
+/**
+ * Overwrites for broken male weapon sprites. When the player is in the given state with the male sprite equipped,
+ * the female sprite is rendered instead.
+ * Key: PlayerState name (e.g. 'IdleCombatMode'). Value: array of { maleSprite, femaleSprite } mappings.
+ */
+export const WEAPON_SPRITE_OVERWRITES: Record<string, Array<{ maleSprite: string; femaleSprite: string }>> = {
+    IdleCombatMode: [
+        { maleSprite: 'maxe1', femaleSprite: 'waxe1' },
+        { maleSprite: 'maxe2', femaleSprite: 'waxe2' },
+        { maleSprite: 'maxe3', femaleSprite: 'waxe3' },
+        { maleSprite: 'maxe4', femaleSprite: 'waxe4' },
+        { maleSprite: 'maxe5', femaleSprite: 'waxe5' },
+    ],
+};
+
+/**
+ * Item definitions used for inventory, ground, and equipped rendering.
+ */
+export const ITEMS: Item[] = [
+    {
+        id: 1,
+        name: 'Barbarian Battle Hammer',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 10,
+        itemSpriteIndexFemale: 10,
+        equippedSpriteMale: 'mbabhammer',
+        equippedSpriteFemale: 'wbabhammer',
+        blockedItemSlots: [ItemTypes.SHIELD],
+    },
+    {
+        id: 2,
+        name: 'Storm Bringer',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 26,
+        itemSpriteIndexFemale: 26,
+        equippedSpriteMale: 'mstormbringer',
+        equippedSpriteFemale: 'wstormbringer',
+        effects: [{ effect: ItemEffect.STORM_BRINGER }],
+    },
+    {
+        id: 3,
+        name: 'Short Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 56,
+    },
+    {
+        id: 4,
+        name: 'Tower Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 8,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 56,
+    },
+    {
+        id: 5,
+        name: 'Knight Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 7,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 49,
+    }, {
+        id: 6,
+        name: 'Lagi Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 42,
+    }, {
+        id: 7,
+        name: 'Leather Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 7,
+    }, {
+        id: 8,
+        name: 'Aresden Hero Armor',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 9,
+        equippedSpriteMale: 'mhpmail2',
+        equippedSpriteFemale: 'whpmail2',
+    }, {
+        id: 9,
+        name: 'Elvine Hero Armor',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 8,
+        equippedSpriteMale: 'mhpmail1',
+        equippedSpriteFemale: 'whpmail1',
+    }, {
+        id: 10,
+        name: 'Aresden Hero Hauberk',
+        itemType: ItemTypes.HAUBERK,
+        itemSheetIndexMale: 6,
+        itemSheetIndexFemale: 10,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'mhhauberk2',
+        equippedSpriteFemale: 'whhauberk2',
+    }, {
+        id: 11,
+        name: 'Elvine Hero Hauberk',
+        itemType: ItemTypes.HAUBERK,
+        itemSheetIndexMale: 6,
+        itemSheetIndexFemale: 10,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mhhauberk1',
+        equippedSpriteFemale: 'whhauberk1',
+    }, {
+        id: 12,
+        name: 'Chemise',
+        gender: Gender.FEMALE,
+        itemType: ItemTypes.HAUBERK,
+        itemSheetIndexFemale: 10,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteFemale: 'wchemiss',
+    }, {
+        id: 13,
+        name: 'Aresden Hero Leggings',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'mhleggings2',
+        equippedSpriteFemale: 'whleggings2',
+    }, {
+        id: 14,
+        name: 'Elvine Hero Leggings',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mhleggings1',
+        equippedSpriteFemale: 'whleggings1',
+    }, {
+        id: 15,
+        name: 'Aresden Hero Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 7,
+        equippedSpriteMale: 'mhhelm2',
+        equippedSpriteFemale: 'whhelm2',
+    }, {
+        id: 16,
+        name: 'Elvine Hero Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'mhhelm1',
+        equippedSpriteFemale: 'whhelm1',
+    }, {
+        id: 17,
+        name: 'Aresden Hero Robe',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 10,
+        itemSpriteIndexFemale: 11,
+        equippedSpriteMale: 'mhrobe2',
+        equippedSpriteFemale: 'whrobe2',
+    }, {
+        id: 18,
+        name: 'Elvine Hero Robe',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 10,
+        equippedSpriteMale: 'mhrobe1',
+        equippedSpriteFemale: 'whrobe1',
+    }, {
+        id: 20,
+        name: 'Aresden Hero Cap',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 9,
+        equippedSpriteMale: 'mhcap2',
+        equippedSpriteFemale: 'whcap2',
+    }, {
+        id: 21,
+        name: 'Elvine Hero Cap',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 8,
+        equippedSpriteMale: 'mhcap1',
+        equippedSpriteFemale: 'whcap1',
+    }, {
+        id: 22,
+        name: 'Aresden Hero Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'mmantle01',
+        equippedSpriteFemale: 'wmantle01',
+    }, {
+        id: 23,
+        name: 'Aresden Hero Long Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mmantle04',
+        equippedSpriteFemale: 'wmantle04',
+    }, {
+        id: 24,
+        name: 'Elvine Hero Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mmantle02',
+        equippedSpriteFemale: 'wmantle02',
+    }, {
+        id: 25,
+        name: 'Elvine Hero Long Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'mmantle05',
+        equippedSpriteFemale: 'wmantle05',
+    }, {
+        id: 26,
+        name: 'Long Boots (White)',
+        itemType: ItemTypes.BOOTS,
+        itemSheetIndexMale: 4,
+        itemSheetIndexFemale: 4,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mlboots',
+        equippedSpriteFemale: 'wlboots',
+    }, {
+        id: 27,
+        name: 'Angelic Pendant (STR)',
+        itemType: ItemTypes.ACCESSORY,
+        itemSheetIndexMale: 19,
+        itemSheetIndexFemale: 19,
+        itemSpriteIndexMale: 10,
+        itemSpriteIndexFemale: 10,
+        equippedSpriteMale: 'tutelarangel1',
+        equippedSpriteFemale: 'tutelarangel1',
+        offsetX: 10,
+        offsetY: -20,
+        effects: [{ effect: ItemEffect.STAR_TWINKLE }],
+    }, {
+        id: 28,
+        name: 'Angelic Pendant (DEX)',
+        itemType: ItemTypes.ACCESSORY,
+        itemSheetIndexMale: 19,
+        itemSheetIndexFemale: 19,
+        itemSpriteIndexMale: 11,
+        itemSpriteIndexFemale: 11,
+        equippedSpriteMale: 'tutelarangel2',
+        equippedSpriteFemale: 'tutelarangel2',
+        offsetX: 10,
+        offsetY: -20,
+        effects: [{ effect: ItemEffect.STAR_TWINKLE }],
+    }, {
+        id: 29,
+        name: 'Angelic Pendant (INT)',
+        itemType: ItemTypes.ACCESSORY,
+        itemSheetIndexMale: 19,
+        itemSheetIndexFemale: 19,
+        itemSpriteIndexMale: 12,
+        itemSpriteIndexFemale: 12,
+        equippedSpriteMale: 'tutelarangel3',
+        equippedSpriteFemale: 'tutelarangel3',
+        offsetX: 10,
+        offsetY: -35,
+        effects: [{ effect: ItemEffect.STAR_TWINKLE }],
+    }, {
+        id: 30,
+        name: 'Angelic Pendant (MAG)',
+        itemType: ItemTypes.ACCESSORY,
+        itemSheetIndexMale: 19,
+        itemSheetIndexFemale: 19,
+        itemSpriteIndexMale: 13,
+        itemSpriteIndexFemale: 13,
+        equippedSpriteMale: 'tutelarangel4',
+        equippedSpriteFemale: 'tutelarangel4',
+        offsetX: 10,
+        offsetY: -35,
+        effects: [{ effect: ItemEffect.STAR_TWINKLE }],
+    }, {
+        id: 31,
+        name: 'Necklace of Ice Elemental',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 38,
+        itemSpriteIndexFemale: 38,
+    }, {
+        id: 32,
+        name: 'Gold Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 14,
+        itemSpriteIndexFemale: 14,
+        scale: 1.5
+    }, {
+        id: 33,
+        name: 'Silver Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 15,
+        itemSpriteIndexFemale: 15,
+        scale: 1.5
+    }, {
+        id: 34,
+        name: 'Emerald Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 10,
+        itemSpriteIndexFemale: 10,
+        scale: 1.5
+    }, {
+        id: 35,
+        name: 'Gold',
+        itemType: ItemTypes.MISC,
+        itemSheetIndexMale: 5,
+        itemSheetIndexFemale: 5,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        scale: 1.5,
+        stackable: true,
+    }, {
+        id: 36,
+        name: 'Health Potion',
+        itemType: ItemTypes.MISC,
+        itemSheetIndexMale: 5,
+        itemSheetIndexFemale: 5,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        scale: 1.5,
+        stackable: true,
+        consumable: true,
+        consumptionSound: 'C19',
+    }, {
+        id: 37,
+        name: 'Dark Knight Templar Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 20,
+        itemSpriteIndexFemale: 20,
+        equippedSpriteMale: 'msw3',
+        equippedSpriteFemale: 'wsw3',
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0x0000ff }],
+    }, {
+        id: 38,
+        name: 'Templar Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 20,
+        itemSpriteIndexFemale: 20,
+        equippedSpriteMale: 'msw3',
+        equippedSpriteFemale: 'wsw3',
+    }, {
+        id: 39,
+        name: 'Merien Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 9,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0x00ff00 }],
+    }, {
+        id: 40,
+        name: 'Merien Plate Mail',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mpmail',
+        equippedSpriteFemale: 'wpmail',
+        effects: [
+            { effect: ItemEffect.GLARE, effectColor: 0x00ff00 },
+            { effect: ItemEffect.TINT_INVENTORY, effectColor: 0x00ff00 }
+        ],
+    }, {
+        id: 41,
+        name: 'Dark Mage Templar Wand',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mstaff3',
+        equippedSpriteFemale: 'wstaff3',
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0x00ff00 }],
+    }, {
+        id: 42,
+        name: 'Xelima Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 12,
+        itemSpriteIndexFemale: 12,
+        equippedSpriteMale: 'maxe6',
+        equippedSpriteFemale: 'waxe6',
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0xff0000 }],
+    }, {
+        id: 43,
+        name: 'Long Boots (Red)',
+        itemType: ItemTypes.BOOTS,
+        itemSheetIndexMale: 4,
+        itemSheetIndexFemale: 4,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mlboots',
+        equippedSpriteFemale: 'wlboots',
+        effects: [
+            { effect: ItemEffect.TINT_APPEARANCE, effectColor: 0xff0000 },
+            { effect: ItemEffect.TINT_INVENTORY, effectColor: 0xff0000 },
+        ],
+    }, {
+        id: 44,
+        name: 'Giant Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 18,
+        itemSpriteIndexFemale: 18,
+        equippedSpriteMale: 'msw2',
+        equippedSpriteFemale: 'wsw2',
+    }, {
+        id: 45,
+        name: 'Radiance (unofficial)',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 18,
+        itemSpriteIndexFemale: 18,
+        equippedSpriteMale: 'msw2',
+        equippedSpriteFemale: 'wsw2',
+        effects: [
+            { effect: ItemEffect.TINT_INVENTORY, effectColor: 0xffea00 },
+            { effect: ItemEffect.GLOW, effectColor: 0xffff8f },
+            { effect: ItemEffect.GLARE, effectColor: 0xffff8f },
+        ]
+    }, {
+        id: 46,
+        name: 'Short Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'mbo',
+        equippedSpriteFemale: 'wbo',
+        startSpriteSheetIndex: 0,
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 47,
+        name: 'Long Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mbo',
+        equippedSpriteFemale: 'wbo',
+        startSpriteSheetIndex: 56,
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 48,
+        name: 'Direction Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'mdirectbow',
+        equippedSpriteFemale: 'wdirectbow',
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 49,
+        name: 'Fire Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mfirebow',
+        equippedSpriteFemale: 'wfirebow',
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 50,
+        name: 'Composite Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mbo',
+        equippedSpriteFemale: 'wbo',
+        startSpriteSheetIndex: 56,
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 51,
+        name: 'Dark Elf Bow',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 1,
+        itemSheetIndexFemale: 1,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mbo',
+        equippedSpriteFemale: 'wbo',
+        startSpriteSheetIndex: 0,
+        weaponType: WeaponType.BOW,
+        blockedItemSlots: [ItemTypes.SHIELD],
+    }, {
+        id: 52,
+        name: 'Dagger',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 0,
+    }, {
+        id: 53,
+        name: 'Long Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 112,
+    }, {
+        id: 54,
+        name: 'Sabre',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 168,
+    }, {
+        id: 55,
+        name: 'Excalibur',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 19,
+        itemSpriteIndexFemale: 19,
+        equippedSpriteMale: 'mswx',
+        equippedSpriteFemale: 'wswx',
+    }, {
+        id: 56,
+        name: 'Scimitar',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 224,
+    }, {
+        id: 57,
+        name: 'Falchion',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 280,
+    }, {
+        id: 58,
+        name: 'Rapier',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 336,
+    }, {
+        id: 59,
+        name: 'Broad Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 7,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 392,
+    }, {
+        id: 60,
+        name: 'Bastard Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 8,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 448,
+    }, {
+        id: 61,
+        name: 'Claymore',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 9,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 504,
+    }, {
+        id: 62,
+        name: 'Great Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 10,
+        itemSpriteIndexFemale: 10,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 560,
+    }, {
+        id: 63,
+        name: 'Flamberge',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 11,
+        itemSpriteIndexFemale: 11,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 616,
+    }, {
+        id: 64,
+        name: 'Light Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'maxe3',
+        equippedSpriteFemale: 'waxe3',
+    }, {
+        id: 65,
+        name: 'Tomahawk',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'maxe4',
+        equippedSpriteFemale: 'waxe4',
+    }, {
+        id: 66,
+        name: 'Double Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'maxe1',
+        equippedSpriteFemale: 'waxe1',
+    }, {
+        id: 67,
+        name: 'War Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'maxe2',
+        equippedSpriteFemale: 'waxe2',
+    }, {
+        id: 68,
+        name: '4 Bladed Golden Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'maxe5',
+        equippedSpriteFemale: 'waxe5',
+    }, {
+        id: 69,
+        name: 'Pickaxe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mpickaxe1',
+        equippedSpriteFemale: 'wpickaxe1',
+    }, {
+        id: 70,
+        name: 'Battle Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'maxe6',
+        equippedSpriteFemale: 'waxe6',
+    }, {
+        id: 71,
+        name: 'Kloness Axe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 11,
+        itemSpriteIndexFemale: 11,
+        equippedSpriteMale: 'mklonessaxe',
+        equippedSpriteFemale: 'wklonessaxe',
+    }, {
+        id: 72,
+        name: 'Hoe',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 9,
+        equippedSpriteMale: 'mhoe',
+        equippedSpriteFemale: 'whoe',
+    }, {
+        id: 73,
+        name: 'Targe Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 14,
+    }, {
+        id: 74,
+        name: 'Scooterm Shield', // WTF name is that?
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 21,
+    }, {
+        id: 75,
+        name: 'Blonde Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 28,
+    }, {
+        id: 76,
+        name: 'Iron Shield',
+        itemType: ItemTypes.SHIELD,
+        itemSheetIndexMale: 2,
+        itemSheetIndexFemale: 2,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'msh',
+        equippedSpriteFemale: 'wsh',
+        startSpriteSheetIndex: 35,
+    }, {
+        id: 77,
+        name: 'Magic Wand 1',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mstaff2',
+        equippedSpriteFemale: 'wstaff2',
+    }, {
+        id: 78,
+        name: 'Magic Wand 2',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'mstaff1',
+        equippedSpriteFemale: 'wstaff1',
+    }, {
+        id: 79,
+        name: 'Berserk Wand',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'mberserkwand',
+        equippedSpriteFemale: 'wberserkwand',
+    }, {
+        id: 80,
+        name: 'Kloness Wand',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mklonesswand',
+        equippedSpriteFemale: 'wklonesswand',
+    }, {
+        id: 81,
+        name: 'Resurrection Wand',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mremagicwand',
+        equippedSpriteFemale: 'wremagicwand',
+    }, {
+        id: 82,
+        name: 'Templar Wand',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 16,
+        itemSheetIndexFemale: 16,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mstaff3',
+        equippedSpriteFemale: 'wstaff3',
+    }, {
+        id: 83,
+        name: 'Magic Necklace (RM10)',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+    }, {
+        id: 84,
+        name: 'Magic Necklace (DM+1)',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+    }, {
+        id: 85,
+        name: 'Magic Necklace (MS10)',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 7,
+    }, {
+        id: 86,
+        name: 'Magic Necklace (DF+10)',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 6,
+    }, {
+        id: 87,
+        name: 'Gold Necklace',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 8,
+    }, {
+        id: 88,
+        name: 'Silver Necklace',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 9,
+        itemSpriteIndexFemale: 9,
+    }, {
+        id: 89,
+        name: 'Necklace of Lightning Protection',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 33,
+        itemSpriteIndexFemale: 33,
+    }, {
+        id: 90,
+        name: 'Necklace of Fire Protection',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 34,
+        itemSpriteIndexFemale: 34,
+    }, {
+        id: 91,
+        name: 'Necklace of Poision Protection',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 35,
+        itemSpriteIndexFemale: 35,
+    }, {
+        id: 92,
+        name: 'Necklace of Medusa',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 36,
+        itemSpriteIndexFemale: 36,
+    }, {
+        id: 93,
+        name: 'Necklace of Ice Protection',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 37,
+        itemSpriteIndexFemale: 37,
+    }, {
+        id: 94,
+        name: 'Necklace of Air Elemental',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 40,
+        itemSpriteIndexFemale: 40,
+    }, {
+        id: 95,
+        name: 'Necklace of Efreet',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 41,
+        itemSpriteIndexFemale: 41,
+    }, {
+        id: 96,
+        name: 'Necklace of Beholder',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 47,
+        itemSpriteIndexFemale: 47,
+    }, {
+        id: 97,
+        name: 'Necklace of Stone Golem',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 48,
+        itemSpriteIndexFemale: 48,
+    }, {
+        id: 98,
+        name: 'Necklace of Lich',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 51,
+        itemSpriteIndexFemale: 51,
+    }, {
+        id: 99,
+        name: 'Necklace of Merien',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 54,
+        itemSpriteIndexFemale: 54,
+    }, {
+        id: 100,
+        name: 'Necklace of Kloness',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 52,
+        itemSpriteIndexFemale: 52,
+    }, {
+        id: 101,
+        name: 'Necklace of Xelima',
+        itemType: ItemTypes.NECKLACE,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 53,
+        itemSpriteIndexFemale: 53,
+    }, {
+        id: 102,
+        name: 'Lucky Gold Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 13,
+        itemSpriteIndexFemale: 13,
+        scale: 1.5
+    }, {
+        id: 104,
+        name: 'Sapphire Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 11,
+        itemSpriteIndexFemale: 11,
+        scale: 1.5
+    }, {
+        id: 105,
+        name: 'Ruby Ring',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 12,
+        itemSpriteIndexFemale: 12,
+        scale: 1.5
+    }, {
+        id: 106,
+        name: 'Ring of Xelima',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 25,
+        itemSpriteIndexFemale: 25,
+        scale: 1.5
+    }, {
+        id: 107,
+        name: 'Ring of Abaddon',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 26,
+        itemSpriteIndexFemale: 26,
+        scale: 1.5
+    }, {
+        id: 108,
+        name: 'Ring of Ogre Power',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 29,
+        itemSpriteIndexFemale: 29,
+        scale: 1.5
+    }, {
+        id: 109,
+        name: 'Ring of Demon Power',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 28,
+        itemSpriteIndexFemale: 28,
+        scale: 1.5
+    }, {
+        id: 110,
+        name: 'Ring of Wizard',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 30,
+        itemSpriteIndexFemale: 30,
+        scale: 1.5
+    }, {
+        id: 111,
+        name: 'Ring of Mage',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 31,
+        itemSpriteIndexFemale: 31,
+        scale: 1.5
+    }, {
+        id: 112,
+        name: 'Ring of Grand Mage',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 32,
+        itemSpriteIndexFemale: 32,
+        scale: 1.5
+    }, {
+        id: 123,
+        name: 'Ring of Arch Mage',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 49,
+        itemSpriteIndexFemale: 49,
+        scale: 1.5
+    }, {
+        id: 124,
+        name: 'Ring of Dragon Power',
+        itemType: ItemTypes.RING,
+        itemSheetIndexMale: 15,
+        itemSheetIndexFemale: 15,
+        itemSpriteIndexMale: 50,
+        itemSpriteIndexFemale: 50,
+        scale: 1.5
+    }, {
+        id: 125,
+        name: 'Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mmantle03',
+        equippedSpriteFemale: 'wmantle03',
+    }, {
+        id: 126,
+        name: 'Long Cape',
+        itemType: ItemTypes.CAPE,
+        itemSheetIndexMale: 17,
+        itemSheetIndexFemale: 17,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mmantle06',
+        equippedSpriteFemale: 'wmantle06',
+    }, {
+        id: 127,
+        name: 'Shoes',
+        itemType: ItemTypes.BOOTS,
+        itemSheetIndexMale: 4,
+        itemSheetIndexFemale: 4,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'mshoes',
+        equippedSpriteFemale: 'wshoes',
+    }, {
+        id: 128,
+        name: 'Shirt',
+        itemType: ItemTypes.HAUBERK,
+        itemSheetIndexMale: 6,
+        itemSheetIndexFemale: 10,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mshirt',
+        equippedSpriteFemale: 'wshirt',
+    }, {
+        id: 129,
+        name: 'Hauberk',
+        itemType: ItemTypes.HAUBERK,
+        itemSheetIndexMale: 6,
+        itemSheetIndexFemale: 10,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mhauberk',
+        equippedSpriteFemale: 'whauberk',
+    }, {
+        id: 130,
+        name: 'Leather Armor',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mlarmor',
+        equippedSpriteFemale: 'wlarmor',
+    }, {
+        id: 131,
+        name: 'Chain Mail',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mcmail',
+        equippedSpriteFemale: 'wcmail',
+    }, {
+        id: 132,
+        name: 'Scale Mail',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'msmail',
+        equippedSpriteFemale: 'wsmail',
+    }, {
+        id: 133,
+        name: 'Plate Mail',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'mpmail',
+        equippedSpriteFemale: 'wpmail',
+    }, {
+        id: 134,
+        name: 'Trousers',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mtrouser',
+        equippedSpriteFemale: 'wtrouser',
+    }, {
+        id: 135,
+        name: 'Knee Trousers',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'mhtrouser',
+        equippedSpriteFemale: 'whtrouser',
+    }, {
+        id: 136,
+        name: 'Chain Hose',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'mchoses',
+        equippedSpriteFemale: 'wchoses',
+    }, {
+        id: 137,
+        name: 'Plate Leggings',
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexMale: 7,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'mleggings',
+        equippedSpriteFemale: 'wleggings',
+    }, {
+        id: 138,
+        name: 'Bodice',
+        gender: Gender.FEMALE,
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteFemale: 'wbodice1',
+    }, {
+        id: 139,
+        name: 'Long Bodice',
+        gender: Gender.FEMALE,
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteFemale: 'wbodice2',
+    }, {
+        id: 140,
+        name: 'Skirt',
+        gender: Gender.FEMALE,
+        itemType: ItemTypes.LEGGINGS,
+        itemSheetIndexFemale: 11,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteFemale: 'wskirt',
+    }, {
+        id: 141,
+        name: 'Tunic',
+        gender: Gender.MALE,
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSpriteIndexMale: 4,
+        equippedSpriteMale: 'mtunic',
+    }, {
+        id: 142,
+        name: 'Robe',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 6,
+        equippedSpriteMale: 'mrobe1',
+        equippedSpriteFemale: 'wrobe1',
+    }, {
+        id: 143,
+        name: 'Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 0,
+        itemSpriteIndexFemale: 0,
+        equippedSpriteMale: 'mhelm4',
+        equippedSpriteFemale: 'whelm4',
+    }, {
+        id: 144,
+        name: 'Full Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 1,
+        itemSpriteIndexFemale: 1,
+        equippedSpriteMale: 'mhelm1',
+        equippedSpriteFemale: 'whelm1',
+    }, {
+        id: 145,
+        name: 'Xelima Blade',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 13,
+        itemSpriteIndexFemale: 13,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 560,
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0xff0000 }],
+    }, {
+        id: 146,
+        name: 'Xelima Rapier',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 14,
+        itemSpriteIndexFemale: 14,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 336,
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0xff0000 }],
+    }, {
+        id: 147,
+        name: 'Sword of Medusa',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 16,
+        itemSpriteIndexFemale: 16,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 560,
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0x00ff00 }],
+    }, {
+        id: 148,
+        name: 'Sword of Ice Elemental',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 15,
+        itemSpriteIndexFemale: 15,
+        equippedSpriteMale: 'msw',
+        equippedSpriteFemale: 'wsw',
+        startSpriteSheetIndex: 560,
+        effects: [{ effect: ItemEffect.GLARE, effectColor: 0x0000ff }],
+    }, {
+        id: 149,
+        name: 'Demon Slayer',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 17,
+        itemSpriteIndexFemale: 17,
+        equippedSpriteMale: 'msw2',
+        equippedSpriteFemale: 'wsw2',
+        effects: [
+            { effect: ItemEffect.TINT_APPEARANCE, effectColor: 0xff0000 }, 
+            { effect: ItemEffect.TINT_INVENTORY, effectColor: 0xff0000 }
+        ],
+    }, {
+        id: 150,
+        name: 'Horned Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 2,
+        itemSpriteIndexFemale: 2,
+        equippedSpriteMale: 'nmhelm1',
+        equippedSpriteFemale: 'nwhelm1',
+    }, {
+        id: 151,
+        name: 'Winged Helmet',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 3,
+        itemSpriteIndexFemale: 3,
+        equippedSpriteMale: 'nmhelm2',
+        equippedSpriteFemale: 'nwhelm2',
+    }, {
+        id: 152,
+        name: 'Wizard Cap',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 4,
+        itemSpriteIndexFemale: 4,
+        equippedSpriteMale: 'nmhelm3',
+        equippedSpriteFemale: 'nwhelm3',
+    }, {
+        id: 153,
+        name: 'Wizard Hat',
+        itemType: ItemTypes.HELMET,
+        itemSheetIndexMale: 18,
+        itemSheetIndexFemale: 18,
+        itemSpriteIndexMale: 5,
+        itemSpriteIndexFemale: 5,
+        equippedSpriteMale: 'nmhelm4',
+        equippedSpriteFemale: 'nwhelm4',
+    }, {
+        id: 154,
+        name: 'Hammer',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 7,
+        itemSpriteIndexFemale: 7,
+        equippedSpriteMale: 'mhammer',
+        equippedSpriteFemale: 'mhammer',
+    }, {
+        id: 155,
+        name: 'Battle Hammer',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 14,
+        itemSheetIndexFemale: 14,
+        itemSpriteIndexMale: 8,
+        itemSpriteIndexFemale: 8,
+        equippedSpriteMale: 'mbhammer',
+        equippedSpriteFemale: 'mbhammer',
+    }, {
+        id: 156,
+        name: 'Santa Costume',
+        itemType: ItemTypes.ARMOR,
+        itemSheetIndexMale: 8,
+        itemSheetIndexFemale: 12,
+        itemSpriteIndexMale: 6,
+        itemSpriteIndexFemale: 7,
+        equippedSpriteMale: 'msanta',
+        equippedSpriteFemale: 'wsanta',
+        blockedItemSlots: [ItemTypes.HELMET, ItemTypes.BOOTS],
+    }, {
+        id: 157,
+        name: 'Black Shadow Sword',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 25,
+        itemSpriteIndexFemale: 25,
+        equippedSpriteMale: 'mbshadowsword',
+        equippedSpriteFemale: 'wbshadowsword',
+    }, {
+        id: 158,
+        name: 'Devastator',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 21,
+        itemSpriteIndexFemale: 21,
+        equippedSpriteMale: 'mdebastator',
+        equippedSpriteFemale: 'wdebastator',
+    }, {
+        id: 159,
+        name: 'Dark Executor',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 24,
+        itemSpriteIndexFemale: 24,
+        equippedSpriteMale: 'mdarkexec',
+        equippedSpriteFemale: 'wdarkexec',
+    }, {
+        id: 160,
+        name: 'Lightning Blade',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 22,
+        itemSpriteIndexFemale: 22,
+        equippedSpriteMale: 'mlightblade',
+        equippedSpriteFemale: 'wlightblade',
+    }, {
+        id: 161,
+        name: 'Kloness Blade',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 23,
+        itemSpriteIndexFemale: 23,
+        equippedSpriteMale: 'mklonessblade',
+        equippedSpriteFemale: 'wklonessblade',
+    }, {
+        id: 162,
+        name: 'Kloness Rapier',
+        itemType: ItemTypes.WEAPON,
+        itemSheetIndexMale: 0,
+        itemSheetIndexFemale: 0,
+        itemSpriteIndexMale: 27,
+        itemSpriteIndexFemale: 27,
+        equippedSpriteMale: 'mklonessastock',
+        equippedSpriteFemale: 'wklonessastock',
+    }
+];

@@ -1,0 +1,12 @@
+export const MUSIC_MANAGER_KEY = 'music-manager';
+export const SOUND_MANAGER_KEY = 'sound-manager';
+export const GAME_STATE_MANAGER_KEY = 'game-state-manager';
+export const INVENTORY_MANAGER_KEY = 'inventory-manager';
+export const LOOT_MANAGER_KEY = 'loot-manager';
+export const DEBUG_KEY = 'debug-mode';
+export const DISPLAY_LARGE_ITEMS_KEY = 'display-large-items';
+export const IGNORE_ZIP_KEY = 'ignore-zip';
+export const LOADING_BG_KEY = 'loading-bg-key';
+export const LOGIN_SCREEN_BG_KEY = 'login-screen-bg-key';
+export const ITEM_PACK_SPRITE_SHEETS_KEY = 'item-pack-sprite-sheets';
+export const ITEM_PACK_EMITTED_TINT_KEYS_KEY = 'item-pack-emitted-tint-keys';

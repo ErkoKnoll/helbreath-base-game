@@ -1,0 +1,302 @@
+:root {
+    /* RPG Brownish Theme */
+    --rpg-brown-darkest: #1a0f0a;
+    --rpg-brown-dark: #2d1810;
+    --rpg-brown-medium: #4a2c1a;
+    --rpg-brown-base: #6b4423;
+    --rpg-brown-light: #8b5a2b;
+    --rpg-brown-lighter: #b87333;
+    --rpg-gold: #d4af37;
+    --rpg-gold-dark: #b8941f;
+    --rpg-gold-light: #f4d03f;
+    --rpg-parchment: #f4e4c1;
+    --rpg-leather: #704214;
+    --rpg-shadow: rgba(26, 15, 10, 0.8);
+    --rpg-highlight: rgba(212, 175, 55, 0.3);
+    --custom-cursor: auto;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    color: var(--rpg-parchment);
+    background-image: url('/assets/images/SiteBg.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: 'Georgia', 'Times New Roman', serif;
+    position: relative;
+    cursor: var(--custom-cursor);
+}
+
+html {
+    cursor: var(--custom-cursor);
+}
+
+/* Override browser default cursor behavior for all HTML elements */
+*, *::before, *::after {
+    cursor: var(--custom-cursor) !important;
+}
+
+/* Specific overrides for interactive elements that browsers change cursor for */
+a, button, input, select, textarea, label,
+[role="button"], [role="link"], [tabindex],
+.draggable-dialog-header, .button {
+    cursor: var(--custom-cursor) !important;
+}
+
+.draggable-dialog-header:active {
+    cursor: var(--custom-cursor) !important;
+}
+
+.button:disabled {
+    cursor: var(--custom-cursor) !important;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.75);
+    z-index: -1;
+    pointer-events: none;
+}
+
+#app {
+    width: 100%;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-container {
+    width: 100%;
+    height: 100%;
+}
+
+#game-container canvas {
+    display: block;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 3px solid var(--rpg-gold);
+    box-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+}
+
+#game-container.fullscreen {
+    position: fixed;
+    inset: 0;
+    background: #000000;
+    width: 100vw;
+    height: 100vh;
+}
+
+#game-container canvas.fullscreen {
+    display: block;
+    margin: 0 !important;
+    left: 50% !important;
+    top: 50% !important;
+    border: none;
+    box-shadow: none;
+}
+
+#game-container canvas.fullscreen {
+    display: block;
+    margin: 0 !important;
+    left: 50% !important;
+    top: 50% !important;
+}
+
+.spritePosition {
+    margin: 10px 0 0 10px;
+    font-size: 0.8em;
+}
+
+.button {
+    width: 140px;
+    margin: 10px;
+    padding: 10px 16px;
+    background: linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-medium) 100%);
+    color: var(--rpg-parchment);
+    border: 2px solid var(--rpg-leather);
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-family: 'Georgia', serif;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px var(--rpg-shadow);
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        0 2px 4px var(--rpg-shadow);
+
+    &:hover {
+        background: linear-gradient(180deg, var(--rpg-brown-lighter) 0%, var(--rpg-brown-light) 100%);
+        border-color: var(--rpg-gold);
+        color: var(--rpg-gold-light);
+        box-shadow: 
+            inset 0 1px 0 rgba(255, 255, 255, 0.3),
+            0 2px 6px var(--rpg-gold-dark),
+            0 0 12px rgba(212, 175, 55, 0.3);
+    }
+
+    &:active {
+        background: linear-gradient(180deg, var(--rpg-brown-medium) 0%, var(--rpg-brown-dark) 100%);
+        box-shadow: 
+            inset 0 2px 4px var(--rpg-shadow),
+            0 1px 2px var(--rpg-shadow);
+        transform: translateY(1px);
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        background: linear-gradient(180deg, var(--rpg-brown-dark) 0%, var(--rpg-brown-darkest) 100%);
+        border-color: var(--rpg-brown-dark);
+        color: rgba(244, 228, 193, 0.4);
+        box-shadow: none;
+    }
+}
+
+.draggable-dialog {
+    background: linear-gradient(135deg, var(--rpg-brown-dark) 0%, var(--rpg-brown-darkest) 100%);
+    border: 3px solid var(--rpg-leather);
+    border-radius: 8px;
+    box-shadow: 
+        0 8px 32px var(--rpg-shadow),
+        inset 0 1px 0 rgba(212, 175, 55, 0.2),
+        0 0 0 1px var(--rpg-brown-dark);
+    min-width: 200px;
+    user-select: none;
+    pointer-events: auto;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.draggable-dialog[data-dialog-id="main-dialog"] {
+    min-width: 270px;
+}
+
+.draggable-dialog[data-dialog-id="camera-map-dialog"] {
+    min-width: 300px;
+}
+
+.draggable-dialog[data-dialog-id="monster-dialog"] {
+    min-width: 420px;
+}
+
+.draggable-dialog[data-dialog-id="minimap-dialog"] {
+    width: fit-content;
+    max-width: 90vw;
+}
+
+.draggable-dialog[data-dialog-id="minimap-dialog"] .draggable-dialog-content {
+    padding: 0;
+    overflow: hidden;
+    display: block;
+    line-height: 0;
+}
+
+.draggable-dialog[data-dialog-id="about-dialog"] .draggable-dialog-content {
+    overflow: hidden;
+    gap: 0;
+}
+
+.draggable-dialog[data-dialog-id="minimap-dialog"] img {
+    display: block;
+    width: auto;
+    height: auto;
+}
+
+.draggable-dialog::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        var(--rpg-gold) 20%, 
+        var(--rpg-gold) 80%, 
+        transparent 100%);
+    opacity: 0.5;
+}
+
+.draggable-dialog-header {
+    padding: 14px 20px;
+    background: linear-gradient(180deg, 
+        var(--rpg-brown-base) 0%, 
+        var(--rpg-brown-medium) 100%);
+    border-bottom: 2px solid var(--rpg-leather);
+    font-weight: bold;
+    font-size: 16px;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+    user-select: none;
+    color: var(--rpg-gold);
+    text-shadow: 
+        1px 1px 2px var(--rpg-shadow),
+        0 0 8px rgba(212, 175, 55, 0.3);
+    letter-spacing: 1px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+
+.draggable-dialog-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Custom scrollbar styling for RPG theme */
+.draggable-dialog-content::-webkit-scrollbar {
+    width: 10px;
+}
+
+.draggable-dialog-content::-webkit-scrollbar-track {
+    background: var(--rpg-brown-darkest);
+    border-radius: 4px;
+}
+
+.draggable-dialog-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--rpg-brown-base) 0%, var(--rpg-brown-medium) 100%);
+    border: 1px solid var(--rpg-leather);
+    border-radius: 4px;
+}
+
+.draggable-dialog-content::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-base) 100%);
+    border-color: var(--rpg-gold);
+}
+
+.about-dialog-scroll::-webkit-scrollbar {
+    width: 10px;
+}
+.about-dialog-scroll::-webkit-scrollbar-track {
+    background: var(--rpg-brown-darkest);
+    border-radius: 4px;
+}
+.about-dialog-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--rpg-brown-base) 0%, var(--rpg-brown-medium) 100%);
+    border: 1px solid var(--rpg-leather);
+    border-radius: 4px;
+}
+.about-dialog-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--rpg-brown-light) 0%, var(--rpg-brown-base) 100%);
+    border-color: var(--rpg-gold);
+}
+
+.draggable-dialog-content .button {
+    margin: 0;
+    width: 100%;
+}
