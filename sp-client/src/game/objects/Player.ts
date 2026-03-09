@@ -29,8 +29,11 @@ import { getInventoryManager } from '../../utils/RegistryUtils';
 import { DEFAULT_GEAR, GearConfig, PlayerAppearanceManager, PlayerState } from '../../utils/PlayerAppearanceManager';
 
 /**
- * Represents a player character in the game.
- * Extends GameObject and includes all directional equipment assets.
+ * Represents the player character in the game.
+ * Extends GameObject with combat (melee, bow, spell casting), movement (run, walk, dash),
+ * equipment via PlayerAppearanceManager/InventoryManager, health/damage, and appearance
+ * customization (gender, skin color, hair, underwear). Listens to EventBus for equip and
+ * appearance changes.
  */
 
 export class Player extends GameObject {
@@ -122,14 +125,15 @@ export class Player extends GameObject {
     private starTwinkleAccumulatorMs: number = 0;
 
     /**
-     * Creates a new Player instance with all directional equipment assets.
+     * Creates a new Player instance.
      *
      * @param scene - The Phaser scene to add the player to
      * @param worldX - X coordinate in world map position
      * @param worldY - Y coordinate in world map position
-     * @param direction - Direction index (0-7) for directional sprites (default: 1)
+     * @param direction - Direction enum for facing (default: NorthEast)
      * @param soundManager - SoundManager instance for playing sound effects
      * @param map - HBMap instance for collision checking
+     * @param gear - Initial gear config; resolved from InventoryManager if not provided
      */
     constructor(scene: Scene, worldX: number, worldY: number, direction: Direction = Direction.NorthEast, soundManager: SoundManager, map: HBMap, gear: GearConfig = DEFAULT_GEAR) {
         // Get gender and skin color from GameStateManager (persisted) - must compute before super()
