@@ -23,6 +23,12 @@ The project has been developed heavily with AI assistance and is intentionally k
 
 Join the [Discord server](https://discord.gg/kYhraczb) for discussion, questions, and project showcases. If you build something on top of this project, feel free to share it there.
 
+## Demo
+
+![Helbreath Base Game screenshot](./screenshot.png)
+
+Play the live demo here: [hbexplorer.helbreath.workers.dev](https://hbexplorer.helbreath.workers.dev/)
+
 ## What This Is / Is Not
 
 This project is:
@@ -46,12 +52,6 @@ The goal of this repository is to preserve and modernize a large amount of Helbr
 - Hobby developers building 2D RPG or MMORPG-style projects
 - Developers interested in Phaser setup with web based UI built in React
 - People experimenting with AI-assisted iteration on an existing gameplay codebase
-
-## Demo
-
-![Helbreath Base Game screenshot](./screenshot.png)
-
-Play the live demo here: [hbexplorer.helbreath.workers.dev](https://hbexplorer.helbreath.workers.dev/)
 
 ## About Helbreath
 
