@@ -1,13 +1,14 @@
 import { Boot } from './scenes/Boot';
 import { GameWorld } from './scenes/GameWorld';
-import { AUTO, Game, Scale } from 'phaser';
+import { Game, Scale, WEBGL } from 'phaser';
 import { LoadingScreen } from './scenes/LoadingScreen';
 import { LoginScreen } from './scenes/LoginScreen';
+import { FXAAPostFX } from './pipelines/FXAAPostFX';
 
 //  Find out more information about the Game Config at:
 //  https://docs.phaser.io/api-documentation/typedef/types-core#gameconfig
 const config = {
-    type: AUTO,
+    type: WEBGL,
     width: 1024,
     height: 576,
     parent: 'game-container',
@@ -24,6 +25,7 @@ const config = {
         mode: Scale.NONE,
         autoCenter: Scale.CENTER_BOTH
     },
+    pipeline: { FXAAPostFX } as unknown as Phaser.Types.Core.PipelineConfig,
     scene: [
         Boot,
         LoadingScreen,

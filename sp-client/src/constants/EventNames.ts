@@ -34,6 +34,7 @@ export const IN_UI_PLAY_MUSIC = 'ui-toggle-play-music';
 export const IN_UI_CHANGE_PLAY_MAP_MUSIC = 'play-map-music-changed';
 export const IN_UI_CHANGE_CAMERA_FOLLOW_PLAYER = 'ui-change-camera-follow-player';
 export const IN_UI_CHANGE_CAMERA_SHAKE = 'ui-change-camera-shake';
+export const IN_UI_CHANGE_POST_PROCESSING = 'ui-change-post-processing';
 export const IN_UI_CHANGE_MAP = 'ui-change-map';
 export const IN_UI_TOGGLE_RENDER_MAP_TILES = 'ui-toggle-render-map-tiles';
 export const IN_UI_TOGGLE_RENDER_MAP_OBJECTS = 'ui-toggle-render-map-objects';

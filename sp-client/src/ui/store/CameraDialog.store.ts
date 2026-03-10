@@ -7,8 +7,11 @@ import {
     OUT_UI_MOUSE_POSITION_UPDATE,
     OUT_UI_CAMERA_FOLLOW_PLAYER_CHANGED,
     IN_UI_CHANGE_CAMERA_FOLLOW_PLAYER,
-    IN_UI_CHANGE_CAMERA_SHAKE
+    IN_UI_CHANGE_CAMERA_SHAKE,
+    IN_UI_CHANGE_POST_PROCESSING
 } from '../../constants/EventNames';
+
+export type PostProcessingMode = 'none' | 'fxaa';
 
 export interface PlayerPosition {
     sceneX: number | undefined; 
@@ -26,6 +29,7 @@ interface CameraDialogState {
     cursorPosition: { sceneX: number; sceneY: number; worldX: number; worldY: number } | undefined;
     followPlayer: boolean;
     cameraShake: boolean;
+    postProcessing: PostProcessingMode;
 }
 
 const initialState: CameraDialogState = {
@@ -42,6 +46,7 @@ const initialState: CameraDialogState = {
     cursorPosition: undefined,
     followPlayer: true,
     cameraShake: true,
+    postProcessing: 'none',
 };
 
 export const cameraDialogStore = new Store<CameraDialogState>(initialState);
@@ -75,6 +80,13 @@ export const setCameraShake = (enabled: boolean, notifyPhaser = true) => {
     cameraDialogStore.setState((state) => ({ ...state, cameraShake: enabled }));
     if (notifyPhaser) {
         EventBus.emit(IN_UI_CHANGE_CAMERA_SHAKE, enabled);
+    }
+};
+
+export const setPostProcessing = (mode: PostProcessingMode, notifyPhaser = true) => {
+    cameraDialogStore.setState((state) => ({ ...state, postProcessing: mode }));
+    if (notifyPhaser) {
+        EventBus.emit(IN_UI_CHANGE_POST_PROCESSING, mode);
     }
 };
 

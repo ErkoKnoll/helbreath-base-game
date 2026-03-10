@@ -7,7 +7,7 @@ import { RpgHorizontalSeparator } from '../components/RpgHorizontalSeparator';
 import { RpgSlider } from '../components/RpgSlider';
 import { EventBus } from '../../game/EventBus';
 import { convertPixelPosToWorldPos } from '../../utils/CoordinateUtils';
-import { cameraDialogStore, setCameraZoom, setFollowPlayer, setCameraShake } from '../store/CameraDialog.store';
+import { cameraDialogStore, setCameraZoom, setFollowPlayer, setCameraShake, setPostProcessing } from '../store/CameraDialog.store';
 import { IN_UI_CAMERA_MOVE_UP, IN_UI_CAMERA_MOVE_DOWN, IN_UI_CAMERA_MOVE_LEFT, IN_UI_CAMERA_MOVE_RIGHT } from '../../constants/EventNames';
 
 interface CameraDialogProps {
@@ -30,6 +30,7 @@ export function CameraDialog({
     const cursorPosition = useStore(cameraDialogStore, (state) => state.cursorPosition);
     const followPlayer = useStore(cameraDialogStore, (state) => state.followPlayer);
     const cameraShake = useStore(cameraDialogStore, (state) => state.cameraShake);
+    const postProcessing = useStore(cameraDialogStore, (state) => state.postProcessing);
 
     // Camera movement handlers with continuous scrolling support
     const cameraIntervalRef = useRef<number | undefined>(undefined);
@@ -79,6 +80,15 @@ export function CameraDialog({
 
     const handleZoomReset = () => {
         handleZoomLevelChange(100);
+    };
+
+    const handlePostProcessingChange = (value: string) => {
+        switch (value) {
+            case 'none':
+            case 'fxaa':
+                setPostProcessing(value);
+                break;
+        }
     };
 
     return (
@@ -223,6 +233,22 @@ export function CameraDialog({
                 checked={cameraShake}
                 onCheckedChange={handleCameraShakeChange}
             />
+            
+            <RpgHorizontalSeparator />
+            
+            <div className="rpg-section-title">Post processing</div>
+            <div style={{ marginBottom: '12px' }}>
+                <select
+                    id="post-processing-select"
+                    className="rpg-select"
+                    value={postProcessing}
+                    onChange={(e) => handlePostProcessingChange(e.target.value)}
+                    style={{ width: '100%' }}
+                >
+                    <option value="none">None</option>
+                    <option value="fxaa">FXAA</option>
+                </select>
+            </div>
             
             <RpgHorizontalSeparator />
             

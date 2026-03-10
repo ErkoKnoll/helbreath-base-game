@@ -10,8 +10,11 @@ import {
     IN_UI_CHANGE_CAMERA_ZOOM,
     IN_UI_CHANGE_CAMERA_FOLLOW_PLAYER,
     IN_UI_CHANGE_CAMERA_SHAKE,
+    IN_UI_CHANGE_POST_PROCESSING,
     OUT_UI_CAMERA_FOLLOW_PLAYER_CHANGED,
 } from '../constants/EventNames';
+import { cameraDialogStore } from '../ui/store/CameraDialog.store';
+import type { PostProcessingMode } from '../ui/store/CameraDialog.store';
 
 export interface CameraManagerConfig {
     scene: Scene;
@@ -40,6 +43,7 @@ export class CameraManager {
     private boundChangeZoom: (zoom: number) => void;
     private boundChangeFollowPlayer: (enabled: boolean) => void;
     private boundChangeCameraShake: (enabled: boolean) => void;
+    private boundChangePostProcessing: (mode: PostProcessingMode) => void;
 
     constructor(config: CameraManagerConfig) {
         this.scene = config.scene;
@@ -53,6 +57,24 @@ export class CameraManager {
         this.boundChangeZoom = (zoom: number) => this.setZoom(zoom);
         this.boundChangeFollowPlayer = (enabled: boolean) => this.setFollowPlayer(enabled);
         this.boundChangeCameraShake = (enabled: boolean) => this.setCameraShakeEnabled(enabled);
+        this.boundChangePostProcessing = (mode: PostProcessingMode) => this.applyPostProcessing(mode);
+    }
+
+    private applyPostProcessing(mode: PostProcessingMode): void {
+        const camera = this.scene.cameras?.main;
+        if (!camera) {
+            return;
+        }
+
+        camera.removePostPipeline('FXAAPostFX');
+
+        switch (mode) {
+            case 'fxaa':
+                camera.setPostPipeline('FXAAPostFX');
+                break;
+            case 'none':
+                break;
+        }
     }
 
     public setupEventListeners(): void {
@@ -63,6 +85,11 @@ export class CameraManager {
         EventBus.on(IN_UI_CHANGE_CAMERA_ZOOM, this.boundChangeZoom);
         EventBus.on(IN_UI_CHANGE_CAMERA_FOLLOW_PLAYER, this.boundChangeFollowPlayer);
         EventBus.on(IN_UI_CHANGE_CAMERA_SHAKE, this.boundChangeCameraShake);
+        EventBus.on(IN_UI_CHANGE_POST_PROCESSING, this.boundChangePostProcessing);
+
+        // Apply initial post-processing state from store
+        const { postProcessing } = cameraDialogStore.state;
+        this.applyPostProcessing(postProcessing);
     }
 
     public destroyEventListeners(): void {
@@ -73,6 +100,7 @@ export class CameraManager {
         EventBus.off(IN_UI_CHANGE_CAMERA_ZOOM);
         EventBus.off(IN_UI_CHANGE_CAMERA_FOLLOW_PLAYER);
         EventBus.off(IN_UI_CHANGE_CAMERA_SHAKE);
+        EventBus.off(IN_UI_CHANGE_POST_PROCESSING);
     }
 
     private setCameraShakeEnabled(enabled: boolean): void {
