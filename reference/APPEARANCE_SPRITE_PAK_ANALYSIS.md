@@ -911,10 +911,10 @@ All items from Item.cfg, Item2.cfg, and Item3.cfg (568 items). Columns: ID, Name
 | 879  | SummonScroll(HBT)    | 3    | 0    | 6   | 9      | -300     | 1     | -1    | 0     | 42    | 0   |
 | 880  | SummonScroll(BAR)    | 3    | 0    | 6   | 9      | -300     | 1     | -1    | 0     | 42    | 0   |
 | 881  | ArmorDye(Indigo)     | 11   | 0    | 6   | 58     | -100     | 1     | -1    | 0     | 42    | 0   |
-| 882  | ArmorDye(CrimsonRed) | 11   | 0    | 6   | 61     | -100     | 1     | -1    | 0     | 42    | 0   |
-| 883  | ArmorDye(Gold)       | 11   | 0    | 6   | 60     | -100     | 1     | -1    | 0     | 42    | 0   |
-| 884  | ArmorDye(Aqua)       | 11   | 0    | 6   | 54     | -100     | 1     | -1    | 0     | 42    | 0   |
-| 885  | ArmorDye(Pink)       | 11   | 0    | 6   | 65     | -100     | 1     | -1    | 0     | 42    | 0   |
+| 882  | ArmorDye(CrimsonRed)+ | 11   | 0    | 6   | 61     | -100     | 1     | -1    | 0     | 42    | 0   |
+| 883  | ArmorDye(Gold)+       | 11   | 0    | 6   | 60     | -100     | 1     | -1    | 0     | 42    | 0   |
+| 884  | ArmorDye(Aqua)+       | 11   | 0    | 6   | 54     | -100     | 1     | -1    | 0     | 42    | 0   |
+| 885  | ArmorDye(Pink)+       | 11   | 0    | 6   | 65     | -100     | 1     | -1    | 0     | 42    | 0   |
 | 886  | ArmorDye(Violet)     | 11   | 0    | 6   | 66     | -100     | 1     | -1    | 0     | 42    | 0   |
 | 887  | ArmorDye(Blue)       | 11   | 0    | 6   | 67     | -100     | 1     | -1    | 0     | 42    | 0   |
 | 888  | ArmorDye(Khaki)      | 11   | 0    | 6   | 69     | -100     | 1     | -1    | 0     | 42    | 0   |

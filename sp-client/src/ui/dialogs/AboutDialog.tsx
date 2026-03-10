@@ -61,7 +61,11 @@ export function AboutDialog({
 
                 <h3 style={{ margin: "20px 0 8px 0", fontSize: "18px" }}>
                     Changelog
-                </h3>
+                </h3><p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>v 0.9</p>
+                <ul style={{ margin: "0 0 12px 0", paddingLeft: "20px" }}>
+                    <li>Added remaining misc items</li>
+                    <li>Added FXAA post processing shader</li>
+                </ul>
                 <p style={{ margin: "0 0 4px 0", fontWeight: "bold" }}>v 0.8</p>
                 <ul style={{ margin: "0 0 12px 0", paddingLeft: "20px" }}>
                     <li>Added footsteps</li>

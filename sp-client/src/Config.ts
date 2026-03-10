@@ -5,7 +5,7 @@
 /**
  * Game version number displayed on loading and login screens.
  */
-export const VERSION_NUMBER = '0.8';
+export const VERSION_NUMBER = '0.9';
 
 /**
  * Whether to generate the minimap when loading a map.
