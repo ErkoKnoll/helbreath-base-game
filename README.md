@@ -127,7 +127,6 @@ If you plan to work on a larger improvement, it helps to mention it in [Discord]
 
 ## Top Priorities
 
-- Hook up remaining miscellaneous items.
 - Re-create missing original damaging spells, such as Magic Missile, Lightning Arrow, Fire Field, Mass Lightning Arrow, Mass Magic Missile, and perhaps even Hellfire and Fury of Thor.
 - Abaddon fixes:
   - Taking-damage sprite pivot points seem to be off (needs confirming), and probably need client-level readjustment.
