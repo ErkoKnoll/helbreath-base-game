@@ -4,7 +4,7 @@
 [![Built with Phaser 3](https://img.shields.io/badge/Engine-Phaser%203-8A2BE2)](https://phaser.io/)
 [![UI: React](https://img.shields.io/badge/UI-React-61DAFB)](https://react.dev/)
 [![Play Demo](https://img.shields.io/badge/Demo-Live-blue)](https://hbexplorer.helbreath.workers.dev/)
-[![Discord](https://img.shields.io/badge/Chat-Discord-5865F2)](https://discord.gg/kYhraczb)
+[![Discord](https://img.shields.io/badge/Chat-Discord-5865F2)](https://discord.gg/dPraZVNS)
 
 Helbreath Base Game is a browser-based single-player recreation of the classic [Helbreath](https://helbreath.fandom.com/wiki/Helbreath_Wiki) client, built with [Phaser 3](https://phaser.io/) and [React](https://react.dev/), and designed as a foundation for building 2D (MMO)(A)RPG-style projects. It is best thought of as a playable base client or lightweight game framework rather than a complete game.
 

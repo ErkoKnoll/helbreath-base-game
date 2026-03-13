@@ -295,8 +295,8 @@ export function getLoadingBgKey(scene: Scene): string | undefined {
  * @returns The texture key for the login screen background, or undefined if not set
  */
 export function getLoginScreenBgKey(scene: Scene): string | undefined {
-    return getRegistryValue<string>(scene.registry, LOGIN_SCREEN_BG_KEY);
-    //return getRegistryValue<string>(scene.registry, LOADING_BG_KEY);
+    //return getRegistryValue<string>(scene.registry, LOGIN_SCREEN_BG_KEY);
+    return getRegistryValue<string>(scene.registry, LOADING_BG_KEY);
 }
 
 /**
