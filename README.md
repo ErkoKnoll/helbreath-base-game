@@ -4,7 +4,7 @@
 [![Built with Phaser 3](https://img.shields.io/badge/Engine-Phaser%203-8A2BE2)](https://phaser.io/)
 [![UI: React](https://img.shields.io/badge/UI-React-61DAFB)](https://react.dev/)
 [![Play Demo](https://img.shields.io/badge/Demo-Live-blue)](https://hbexplorer.helbreath.workers.dev/)
-[![Discord](https://img.shields.io/badge/Chat-Discord-5865F2)](https://discord.gg/dPraZVNS)
+[![Discord](https://img.shields.io/badge/Chat-Discord-5865F2)](https://discord.gg/P4tBdGRC3q)
 
 Helbreath Base Game is a browser-based single-player recreation of the classic [Helbreath](https://helbreath.fandom.com/wiki/Helbreath_Wiki) client, built with [Phaser 3](https://phaser.io/) and [React](https://react.dev/), and designed as a foundation for building 2D (MMO)(A)RPG-style projects. It is best thought of as a playable base client or lightweight game framework rather than a complete game.
 
@@ -21,7 +21,7 @@ The repository already includes a substantial amount of core functionality:
 
 The project has been developed heavily with AI assistance and is intentionally kept approachable for AI-assisted workflows and iterative expansion.
 
-Join the [Discord server](https://discord.gg/kYhraczb) for discussion, questions, and project showcases. If you build something on top of this project, feel free to share it there.
+Join the [Discord server](https://discord.gg/P4tBdGRC3q) for discussion, questions, and project showcases. If you build something on top of this project, feel free to share it there.
 
 ## Demo
 
@@ -113,7 +113,7 @@ This repository is intended to stay focused on being a strong base game rather t
 - Documentation improvements and project tooling that make the codebase easier to understand and extend
 - Expansion of original assets. New sprites, sprite upscaling (quite difficult since map tiles and player appearance sprites need to retain perfect pixel-location accuracy), new spells, new maps, and new effects (new effects and spells could be created with the particle system, and more sprite effects can be added using [FX Pipeline](https://docs.phaser.io/phaser/concepts/fx)), as long as they remain aesthetically accurate (subject to review)
 
-If you plan to work on a larger improvement, it helps to mention it in [Discord](https://discord.gg/kYhraczb) first so contributors do not duplicate effort.
+If you plan to work on a larger improvement, it helps to mention it in [Discord](https://discord.gg/P4tBdGRC3q) first so contributors do not duplicate effort.
 
 ## More Docs
 
